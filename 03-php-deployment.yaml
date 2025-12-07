@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-app
+  namespace: web-app
+  labels:
+    app: php-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: php-app
+  template:
+    metadata:
+      labels:
+        app: php-app
+    spec:
+      containers:
+      - name: php
+        # Necesito saber qué Dockerfile usa, si no hay imagen pre-construida
+        # Puedes usar una imagen base como php:8.2-fpm
+        image: php:8.2-fpm  # Cambiar por tu imagen personalizada
+        ports:
+        - containerPort: 9000
+        env:
+        - name: DB_HOST
+          value: "mysql-service"
+        - name: DB_NAME
+          value: "mi_db"
+        - name: DB_USER
+          value: "root"
+        - name: DB_PASSWORD
+          value: "123456"
+        volumeMounts:
+        - name: html-volume
+          mountPath: /var/www/html
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      volumes:
+      - name: html-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: php-service
+  namespace: web-app
+spec:
+  selector:
+    app: php-app
+  ports:
+  - port: 9000
+    targetPort: 9000
+  type: ClusterIP
